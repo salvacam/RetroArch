@@ -1044,6 +1044,7 @@ FILTERS
 #include "../gfx/video_filters/upscale_256x_320x240.c"
 #include "../gfx/video_filters/picoscale_256x_320x240.c"
 #include "../gfx/video_filters/upscale_240x160_320x240.c"
+#include "../gfx/video_filters/upscale_x192_320x240.c"
 #endif
 
 #ifdef HAVE_DSP_FILTER
