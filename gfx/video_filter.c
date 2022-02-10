@@ -321,11 +321,8 @@ static const softfilter_get_implementation_t soft_plugs_builtin[] = {
    upscale_1_5x_get_implementation,
    upscale_256x_320x240_get_implementation,
    picoscale_256x_320x240_get_implementation,
-<<<<<<< HEAD
-   picoscale_x192_320x240_get_implementation,
-=======
    upscale_240x160_320x240_get_implementation,
->>>>>>> 8093f4595c00ed42b2420d6c1c5e145858944349
+   picoscale_x192_320x240_get_implementation,
 };
 
 static bool append_softfilter_plugs(rarch_softfilter_t *filt,
