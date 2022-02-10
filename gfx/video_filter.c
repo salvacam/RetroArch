@@ -293,6 +293,7 @@ extern const struct softfilter_implementation *dot_matrix_4x_get_implementation(
 extern const struct softfilter_implementation *upscale_1_5x_get_implementation(softfilter_simd_mask_t simd);
 extern const struct softfilter_implementation *upscale_256x_320x240_get_implementation(softfilter_simd_mask_t simd);
 extern const struct softfilter_implementation *picoscale_256x_320x240_get_implementation(softfilter_simd_mask_t simd);
+extern const struct softfilter_implementation *upscale_240x160_320x240_get_implementation(softfilter_simd_mask_t simd);
 extern const struct softfilter_implementation *picoscale_x192_320x240_get_implementation(softfilter_simd_mask_t simd);
 
 static const softfilter_get_implementation_t soft_plugs_builtin[] = {
@@ -320,7 +321,11 @@ static const softfilter_get_implementation_t soft_plugs_builtin[] = {
    upscale_1_5x_get_implementation,
    upscale_256x_320x240_get_implementation,
    picoscale_256x_320x240_get_implementation,
+<<<<<<< HEAD
    picoscale_x192_320x240_get_implementation,
+=======
+   upscale_240x160_320x240_get_implementation,
+>>>>>>> 8093f4595c00ed42b2420d6c1c5e145858944349
 };
 
 static bool append_softfilter_plugs(rarch_softfilter_t *filt,
