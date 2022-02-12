@@ -36,12 +36,10 @@
 
 typedef struct
 {
-   void (*upscale_256_320x192_240)(
+   void (*upscale_320x192_240)(
          uint16_t *PICOSCALE_restrict di, uint16_t ds,
-         const uint16_t *PICOSCALE_restrict si, uint16_t ss);
-   void (*upscale_248_320x192_240)(
-         uint16_t *PICOSCALE_restrict di, uint16_t ds,
-         const uint16_t *PICOSCALE_restrict si, uint16_t ss);
+         const uint16_t *PICOSCALE_restrict si, uint16_t ss,
+         uint16_t width);
 } picoscale_functions_t;
 
 struct softfilter_thread_data
@@ -154,71 +152,101 @@ scalers v:
    }                                                \
 } while (0)
 
-/* 248x192 -> 320x240, H32/mode 4, PAR 5:4, for PAL DAR 4:3 (wrong for NTSC) */
-void picoscale_upscale_rgb_snn_248_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
-      const uint16_t *PICOSCALE_restrict si, uint16_t ss)
-{
-   uint16_t y;
-
-   for (y = 0; y < 240; y++)
-   {
-      PICOSCALE_H_UPSCALE_SNN_4_5(di, ds, si, ss, 248, PICOSCALE_F_NOP);
-   }
-}
-
-void picoscale_upscale_rgb_bl2_248_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
-      const uint16_t *PICOSCALE_restrict si, uint16_t ss)
-{
-   uint16_t y;
-
-   for (y = 0; y < 240; y++)
-   {
-      PICOSCALE_H_UPSCALE_BL2_4_5(di, ds, si, ss, 248, PICOSCALE_F_NOP);
-   }
-}
-
-void picoscale_upscale_rgb_bl4_248_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
-      const uint16_t *PICOSCALE_restrict si, uint16_t ss)
-{
-   uint16_t y;
-
-   for (y = 0; y < 240; y++)
-   {
-      PICOSCALE_H_UPSCALE_BL4_4_5(di, ds, si, ss, 248, PICOSCALE_F_NOP);
-   }
-}
-
 /* 256x192 -> 320x240, H32/mode 4, PAR 5:4, for NTSC DAR 4:3 (wrong for PAL) */
-void picoscale_upscale_rgb_snn_256_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
-      const uint16_t *PICOSCALE_restrict si, uint16_t ss)
+void picoscale_upscale_rgb_snn_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
+      const uint16_t *PICOSCALE_restrict si, uint16_t ss, uint16_t width)
 {
-   uint16_t y;
+   uint16_t y, j;
 
-   for (y = 0; y < 240; y++)
+   for (y = 0; y < 192; y += 12)
    {
-      PICOSCALE_H_UPSCALE_SNN_4_5(di, ds, si, ss, 256, PICOSCALE_F_NOP);
+      for (j = 0; j < 9; j++)
+      {
+         PICOSCALE_H_UPSCALE_SNN_4_5(di, ds, si, ss, width, PICOSCALE_F_NOP);
+      }
+      di +=  ds;
+      for (j = 0; j < 9; j++)
+      {
+         PICOSCALE_H_UPSCALE_SNN_4_5(di, ds, si, ss, width, PICOSCALE_F_NOP);
+      }
+
+      /* mix lines 6-8 */
+      di -= 9*ds;
+      PICOSCALE_V_MIX(&di[0], &di[-ds], &di[ds], 320, PICOSCALE_P_05, PICOSCALE_F_NOP);
+      PICOSCALE_V_MIX(&di[-ds], &di[-2*ds], &di[-ds], 320, PICOSCALE_P_05, PICOSCALE_F_NOP);
+      PICOSCALE_V_MIX(&di[ ds], &di[ ds], &di[ 2*ds], 320, PICOSCALE_P_05, PICOSCALE_F_NOP);
+      di += 9*ds;
    }
 }
 
-void picoscale_upscale_rgb_bl2_256_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
-      const uint16_t *PICOSCALE_restrict si, uint16_t ss)
+void picoscale_upscale_rgb_bl2_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
+      const uint16_t *PICOSCALE_restrict si, uint16_t ss, uint16_t width)
 {
-   uint16_t y;
+   uint16_t y, j;
 
-   for (y = 0; y < 240; y++)
+   for (y = 0; y < 192; y += 12)
    {
-      PICOSCALE_H_UPSCALE_BL2_4_5(di, ds, si, ss, 256, PICOSCALE_F_NOP);
+      for (j = 0; j < 5; j++)
+      {
+         PICOSCALE_H_UPSCALE_BL2_4_5(di, ds, si, ss, 256, PICOSCALE_F_NOP);
+      }
+      di +=  ds;
+      for (j = 0; j < 13; j++)
+      {
+         PICOSCALE_H_UPSCALE_BL2_4_5(di, ds, si, ss, 256, PICOSCALE_F_NOP);
+      }
+      /* mix lines 3-10 */
+      di -= 13*ds;
+      PICOSCALE_V_MIX(&di[0], &di[-ds], &di[ds], 320, PICOSCALE_P_05, PICOSCALE_F_NOP);
+      for (j = 0; j < 8; j++)
+      {
+         di += ds;
+         PICOSCALE_V_MIX(&di[0], &di[0], &di[ds], 320, PICOSCALE_P_05, PICOSCALE_F_NOP);
+      }
+      di += 6*ds;
    }
 }
 
-void picoscale_upscale_rgb_bl4_256_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
-      const uint16_t *PICOSCALE_restrict si, uint16_t ss)
+void picoscale_upscale_rgb_bl4_320x192_240(uint16_t *PICOSCALE_restrict di, uint16_t ds,
+      const uint16_t *PICOSCALE_restrict si, uint16_t ss, uint16_t width)
 {
-   uint16_t y;
+   uint16_t y, j;
 
-   for (y = 0; y < 240; y++)
+   for (y = 0; y < 192; y += 12)
    {
-      PICOSCALE_H_UPSCALE_BL4_4_5(di, ds, si, ss, 256, PICOSCALE_F_NOP);
+      for (j = 0; j < 3; j++)
+      {
+         PICOSCALE_H_UPSCALE_BL4_4_5(di, ds, si, ss, width, PICOSCALE_F_NOP);
+      }
+      di += ds;
+      for (j = 0; j < 15; j++)
+      {
+         PICOSCALE_H_UPSCALE_BL4_4_5(di, ds, si, ss, width, PICOSCALE_F_NOP);
+      }
+      di -= 15*ds;
+      /* mixing line 2: line 1 = -ds, line 2 = +ds */
+      PICOSCALE_V_MIX(&di[0], &di[-ds], &di[ds], 320, PICOSCALE_P_025, PICOSCALE_F_NOP);
+      di += ds;
+      /* mixing lines 3-5: line n-1 = 0, line n = +ds */
+      for (j = 0; j < 4; j++)
+      {
+         PICOSCALE_V_MIX(&di[0], &di[0], &di[ds], 320, PICOSCALE_P_025, PICOSCALE_F_NOP);
+         di += ds;
+      }
+      /* mixing lines 6-9 */
+      for (j = 0; j < 5; j++)
+      {
+         PICOSCALE_V_MIX(&di[0], &di[0], &di[ds], 320, PICOSCALE_P_05, PICOSCALE_F_NOP);
+         di += ds;
+      }
+      /* mixing lines 10-13 */
+      for (j = 0; j < 5; j++)
+      {
+         PICOSCALE_V_MIX(&di[0], &di[0], &di[ds], 320, PICOSCALE_P_075, PICOSCALE_F_NOP);
+         di += ds;
+      }
+      /* lines 14-16, already in place */
+      di += 3*ds;
    }
 }
 
@@ -248,21 +276,18 @@ static void picoscale_x192_320x240_initialize(struct filter_data *filt,
    char *filter_type = NULL;
 
    /* Assign default scaling functions */
-   filt->functions.upscale_256_320x192_240 = picoscale_upscale_rgb_snn_256_320x192_240;
-   filt->functions.upscale_248_320x192_240 = picoscale_upscale_rgb_snn_248_320x192_240;
+   filt->functions.upscale_320x192_240 = picoscale_upscale_rgb_snn_320x192_240;
 
    /* Read set filter type */
    if (config->get_string(userdata, "filter_type", &filter_type, "snn"))
    {
       if (!strcmp(filter_type, "bl2"))
       {
-         filt->functions.upscale_256_320x192_240 = picoscale_upscale_rgb_bl2_256_320x192_240;
-         filt->functions.upscale_248_320x192_240 = picoscale_upscale_rgb_bl2_248_320x192_240;
+         filt->functions.upscale_320x192_240 = picoscale_upscale_rgb_bl2_320x192_240;
       }
       else if (!strcmp(filter_type, "bl4"))
       {
-         filt->functions.upscale_256_320x192_240 = picoscale_upscale_rgb_bl4_256_320x192_240;
-         filt->functions.upscale_248_320x192_240 = picoscale_upscale_rgb_bl4_248_320x192_240;
+         filt->functions.upscale_320x192_240 = picoscale_upscale_rgb_bl4_320x192_240;
       }
    }
 
@@ -341,12 +366,12 @@ static void picoscale_x192_320x240_work_cb_rgb565(void *data, void *thread_data)
    {
       if (width == 256)
       {
-         filt->functions.upscale_256_320x192_240(output, out_stride, input, in_stride);
+         filt->functions.upscale_320x192_240(output, out_stride, input, in_stride, 256);
          return;
       }
       else if (width == 248)
       {
-         filt->functions.upscale_248_320x192_240(output, out_stride, input, in_stride);
+         filt->functions.upscale_320x192_240(output, out_stride, input, in_stride, 248);
          return;
       }
    }
